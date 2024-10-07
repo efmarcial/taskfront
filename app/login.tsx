@@ -4,14 +4,18 @@ import { Alert, StyleSheet, TextInput , TouchableOpacity} from 'react-native';
 import axios from 'axios'
 import * as SecureStore from 'expo-secure-store'
 import Icon from 'react-native-vector-icons/Ionicons';
-import { Link } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Link, router } from 'expo-router';
+
+import { Router } from 'expo-router';
+import { useSession } from './context/auth';
+
 
 const API_URL = 'https://cqvhxh6j-8000.use2.devtunnels.ms'
 
 const LoginScreen: React.FC = () => {
 
-    const insets = useSafeAreaInsets();
+    const {signIn} = useSession();
+
 
     const [username, setUsername] = useState<string>('');
     const [password, setPassword] = useState<string>('');
@@ -25,18 +29,17 @@ const LoginScreen: React.FC = () => {
     const [isAppleIconPressed, setIsAppleIconPressed] = useState(false);
 
     const handleLogin = async () => {
-        try {
-            const response = await axios.post(`${API_URL}/login/`, {
-                username,
-                password
-            });
-            console.log(response.data);
-            await SecureStore.setItemAsync('token', response.data.token); // Save the token securely
-            Alert.alert('Login Successful', 'You have logged in successfully.');
-            // Navigate to the home screen or other proteced route
-        } catch (error){
-            console.log(error)
-            Alert.alert('Login Failed', 'An error occurred');
+        if (!username || !password) {
+            Alert.alert("Error", "Please fill in both field");
+            return;
+        }
+        try{
+            await signIn(username, password);// pass the inputs to the signin function
+            router.replace("/"); // Navigate after successful login
+
+        }catch(error){
+            console.error('Sign-in Error', error);
+            Alert.alert('Sign-In Failed', "Please check your credentials");
         }
     };
 

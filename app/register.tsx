@@ -22,7 +22,6 @@ const RegisterScreen: React.FC = () => {
             const response = await axios.post(`${API_URL}/register/`, {
                 username,
                 password,
-                password2,
                 email
             });
             console.log(response.data);
@@ -74,17 +73,6 @@ const RegisterScreen: React.FC = () => {
                     placeholder="Password"
                     value={password}
                     onChangeText={setPassword}
-                    placeholderTextColor={"#ccc"}
-                    secureTextEntry
-                />
-            </View>
-            {/* password2 */}
-            <View style={styles.inputContainer}>
-                <Icon name="lock-closed" size={20} color="grey" style={styles.inputIcon}/>
-                <TextInput style={styles.textInput}
-                    placeholder="Confirm Password"
-                    value={password2}
-                    onChangeText={setPassword2}
                     placeholderTextColor={"#ccc"}
                     secureTextEntry
                 />

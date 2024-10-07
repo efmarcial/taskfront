@@ -1,12 +1,18 @@
 import { Text, View, StyleSheet } from "react-native";
-import { Link } from "expo-router";
-import 'react-native-gesture-handler';
+import { useSession } from "../context/auth";
+
 
 export default function Index() {
+  const {signOut} = useSession();
   return (
     <View style={styles.container}>
       <Text>Home</Text>
-      <Link href="/login">View Login</Link>
+      <Text 
+        onPress={()=> {
+          // The 'app/(app)/_layout.tsx will redireact to the sign-in screen
+          signOut();
+        }}
+      >Sign-Out</Text>
     </View>
   );
 }
