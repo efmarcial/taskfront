@@ -1,20 +1,33 @@
-import React, {useState, Component} from 'react'
+import React, {useState, Component, useEffect} from 'react'
 import {View, TextField,Text, Button} from 'react-native-ui-lib';
 import { Alert, StyleSheet, TextInput , TouchableOpacity} from 'react-native';
 import axios from 'axios'
 import * as SecureStore from 'expo-secure-store'
 import Icon from 'react-native-vector-icons/Ionicons';
 import { Link, router } from 'expo-router';
-
+import * as AuthSession from 'expo-auth-session';
 import { Router } from 'expo-router';
 import { useSession } from './context/auth';
+import { useStorageState } from './context/useStorageState';
+import { makeRedirectUri, useAuthRequest } from 'expo-auth-session';
+import * as WebBrowser from 'expo-web-browser';
 
+WebBrowser.maybeCompleteAuthSession();
 
 const API_URL = 'https://cqvhxh6j-8000.use2.devtunnels.ms'
+const GITHUB_CLIENT_ID = "Ov23liGyjyOumPOAiD6F";
+const GITHUB_CLIENT_SECRECT = "ee085cab2394f0316437d43dd2fb329badfc82a2";
+
+const github_discovery = {
+    authorizationEndpoint: 'https://github.com/login/oauth/authorize',
+    tokenEndpoint: 'https://github.com/login/oauth/access_token',
+    revocationEndpoint: `https://github.com/settings/connections/applications/${GITHUB_CLIENT_ID}`,
+  };
 
 const LoginScreen: React.FC = () => {
 
     const {signIn} = useSession();
+    const [[isLoading, session], setSession] = useStorageState('session');
 
 
     const [username, setUsername] = useState<string>('');
@@ -27,6 +40,23 @@ const LoginScreen: React.FC = () => {
     const [isGoogleIconPressed, setIsGoogleIconPressed] = useState(false);
     const [isGithubIconPressed, setIsGithubIconPressed] = useState(false);
     const [isAppleIconPressed, setIsAppleIconPressed] = useState(false);
+
+    const [request, response, githubPromptAsync] = useAuthRequest(
+        {
+            clientId: GITHUB_CLIENT_ID,
+            scopes: ['identity'],
+            redirectUri: makeRedirectUri(),
+        },
+        github_discovery
+    );
+
+    useEffect(() => {
+        if(response?.type === 'success'){
+            const {code} = response.params;
+        }
+    }, [response]);
+
+
 
     const handleLogin = async () => {
         if (!username || !password) {
@@ -88,7 +118,7 @@ const LoginScreen: React.FC = () => {
             {/* Social Icons*/ }
             <View style={styles.socialIconContainer}>
                 <TouchableOpacity
-                    onPress={()=> Alert.alert("Pressed")}
+                    onPress={()=> {Alert.alert("You have Pressed me");}}
                     onPressIn={() => setIsGoogleIconPressed(true)} // When pressed down
                     onPressOut={()=> setIsGoogleIconPressed(false)} // When released
                     activeOpacity={1} // Disable gray box
@@ -97,7 +127,7 @@ const LoginScreen: React.FC = () => {
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                    onPress={()=> Alert.alert("Pressed")}
+                    onPress={()=> githubPromptAsync()}
                     onPressIn={() => setIsGithubIconPressed(true)} // When pressed down
                     onPressOut={()=> setIsGithubIconPressed(false)} // When released
                     activeOpacity={1} // Disable gray box

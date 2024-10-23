@@ -1,15 +1,20 @@
-import React, {useState} from "react";
+import React, {useEffect, useState} from "react";
 import {View, Text, Button} from 'react-native-ui-lib';
 import { Alert, StyleSheet, TextInput} from "react-native";
+import * as AuthSession from 'expo-auth-session';
 import axios from "axios";
 import * as SecureStore from 'expo-secure-store';
 import Icon from 'react-native-vector-icons/Ionicons'
-import { Link } from "expo-router";
+import { Link, router } from "expo-router";
+import { useSession } from "./context/auth";
 
 
 const RegisterScreen: React.FC = () => {
     
-    const API_URL = 'https://cqvhxh6j-8000.use2.devtunnels.ms' 
+    const API_URL = 'https://cqvhxh6j-8000.use2.devtunnels.ms'
+    const {signIn} = useSession();
+    
+
     const [username, setUsername] = useState<string>('');
     const [password, setPassword] = useState<string>('');
     const [password2, setPassword2] = useState<string>('');
@@ -17,16 +22,23 @@ const RegisterScreen: React.FC = () => {
     const [lastName, setLastName] = useState<string>('');
     const [email, setEmail] = useState<string>('');
 
+
     const handleRegister = async () => {
+        if (!username || !password) {
+            Alert.alert("Error", "Please fill in both fields");
+            return;
+        }
         try {
             const response = await axios.post(`${API_URL}/register/`, {
                 username,
                 password,
                 email
             });
-            console.log(response.data);
-            await SecureStore.setItemAsync('token', response.data.token); 
-            Alert.alert('Register Complete')
+            console.log("Registration complete...\nLoggin In....");
+            await signIn(username, password);// Pass the inputs to the signIn() function 
+            router.replace("/"); // Navigate after successfull login
+            //await SecureStore.setItemAsync('token', response.data.token); 
+            //Alert.alert('Register Complete')
         }catch(error){
             console.log(error);
             Alert.alert('Register failed');

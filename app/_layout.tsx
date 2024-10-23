@@ -1,4 +1,5 @@
 import { Slot } from "expo-router";
+import {Stack} from 'expo-router/stack';
 import { SessionProvider } from "./context/auth";
 
 
@@ -9,7 +10,9 @@ export default function RootLayout(){
 
   return (
     <SessionProvider>
-      <Slot/>
+        <Stack>
+          <Stack.Screen name="(app)" options={{headerShown: false}} />
+        </Stack>
     </SessionProvider>
   )
 }

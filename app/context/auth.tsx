@@ -4,6 +4,9 @@ import axios from 'axios';
 import React, {useState, useEffect} from 'react';
 import { Alert } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
+import * as WebBrowser from 'expo-web-browser';
+
+WebBrowser.maybeCompleteAuthSession();
 
 const AuthContext = createContext<{
   signIn: (username: string, password: string) => void;
@@ -30,53 +33,16 @@ export function useSession() {
 }
 
 export function SessionProvider({ children }: PropsWithChildren) {
+
+  // Session is where the access token is saved from the django api
   const [[isLoading, session], setSession] = useStorageState('session');
   const BASE_API = "https://cqvhxh6j-8000.use2.devtunnels.ms"
 
-  console.log('Initial session state: ', session);
+  console.log('Initial session state');
 
 
 
   const signIn = async (username: string, password: string) => {
-    try {
-
-        console.log('signIn function called');
-        console.log(`Current session: ${session}`);
-
-        if (session){
-            // Validate token by making an API Request
-            console.log("Checking token: ")
-            console.log(`token: ${session}`)
-            const response = await axios.get(`${BASE_API}/token/`, {
-                headers: {Authorization: `Bearer ${session}`}
-            } );
-
-            if(response.status === 200){
-                // Token is valid, set session
-                console.log("token success")
-                setSession(response.data.tokens.access);
-            }else{
-                //No token found, fallback to login API
-                console.log("Token is invalid, logging in again.")
-                setSession(null);
-                await performLogin(username, password);
-            }
-        } else{
-            // No token found, fallback to login API
-            console.log('No token has been founed...............')
-            setSession(null);
-            await performLogin(username, password);
-        }
-    } catch(error){
-      setSession(null);
-        console.error('Error during signIn()', error);
-        Alert.alert("Login Error", "An error occurreed during sign-in")
-    }
-  };
-
-  const performLogin = async (username:string, password: string) => {
-
-
     // Call your login API
     try {
       console.log("Performing login........")
@@ -85,33 +51,52 @@ export function SessionProvider({ children }: PropsWithChildren) {
             password
         });
         console.log("Logging in....", response.data)
+        
+        // Save user info in SecureStore
         await SecureStore.setItemAsync('refresh_token', response.data.tokens.refresh);
+        await SecureStore.setItemAsync('username', response.data.username);
+        await SecureStore.setItemAsync('email', response.data.email);
+        await SecureStore.setItemAsync('first_name', response.data.first_name);
+        await SecureStore.setItemAsync('last_name', response.data.last_name);
+        await SecureStore.setItemAsync('profile_type', response.data.profile.user_type);
+
+
         setSession(response.data.tokens.access); // Set session with new token
-        // Navigate to the home screen or other proteced route
     } catch (error){
-        console.log(error)
+        console.error(error)
         setSession(null);
         Alert.alert('Login Failed', 'An error occurred');
     }
+  };
 
-  }
   const signOut = async () => {
 
     try{
 
+      
         if(session) {
             // Get refresh token
-            const refresh_token = await SecureStore.getItemAsync('refresh_token');
+            
 
             // validate token by making an API Request
             // Check if token exist in session
             console.log(session);
             const response = await axios.post(`${BASE_API}/logout/`, {}, {
-                headers : {Authorization: `Bearer ${refresh_token}`}
+                headers : {Authorization: `Bearer ${session}`}
             })
 
             console.log("Logging out......")
             console.log(response.data);
+
+            // Delete all user profile that has been saved in SecureStore
+            await SecureStore.deleteItemAsync('username');
+            await SecureStore.deleteItemAsync('email');
+            await SecureStore.deleteItemAsync('refresh_token');
+            await SecureStore.deleteItemAsync('first_name');
+            await SecureStore.deleteItemAsync('last_name');
+            await SecureStore.deleteItemAsync('profile_type');
+
+            // Delete session by setting it to null
             setSession(null);
         } else{
             console.log("No session found, already logged out");
